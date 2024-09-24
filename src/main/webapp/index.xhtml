@@ -1,0 +1,321 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+
+<f:view locale="pt_BR">
+    <h:head>
+        <title>Eventos</title>
+    </h:head>
+    <h:body>
+        <h:form id="eventosForm">
+            <p:growl id="growl" showDetail="true" life="3000"
+                     style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;" />
+            <p:panel>
+                <h:panelGrid columns="2" style="width:100%; display:flex;">
+                    <p:outputLabel value="Eventos" style="font-size:24px; font-weight:bold; color:#333;" />
+                    <p:commandButton value="Adicionar evento" onclick="PF('addEventoDialog').show();" type="button"
+                                     style="float:right; margin-left:18px; margin-top: 5px;" />
+                </h:panelGrid>
+                <h:panelGrid columns="2" style="width:100%; margin-top:10px; gap: 10px;">
+                    <h:panelGroup style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                        <h:outputLabel value="Filtrar por nome" style="flex-shrink: 0;" />
+                        <p:inputText id="filtroNome" value="#{eventoController.filtroNome}" style="flex-grow: 1; max-width: 300px;">
+                            <f:validateLength minimum="1" />
+                        </p:inputText>
+                        <p:commandButton value="Aplicar filtro" action="#{eventoController.aplicarFiltro}"
+                                         update=":eventosForm:growl :eventosForm:eventTable" style="flex-shrink: 0;" />
+                    </h:panelGroup>
+                    <h:panelGroup style="display: flex; gap: 10px; width: 100%; padding: 18px 0 18px 0">
+                        <h:outputLabel style="margin-top:10px" value="Filtrar por data de início" for="filtroDataInicio" />
+                        <p:calendar id="filtroDataInicio" value="#{eventoController.filtroDataInicio}"
+                                    pattern="dd/MM/yyyy" navigator="true" showButtonPanel="true" locale="pt_BR" readonlyInput="true">
+                            <f:convertDateTime pattern="dd/MM/yyyy" />
+                        </p:calendar>
+
+                        <p:commandButton value="Limpar" update="filtroDataInicio" actionListener="#{eventoController.limparFiltroDataInicio}"/>
+
+                        <h:outputLabel value="Filtrar por data de fim" style="margin-top: 10px;" for="filtroDataFim" />
+                        <p:calendar id="filtroDataFim" value="#{eventoController.filtroDataFim}"
+                                    pattern="dd/MM/yyyy" navigator="true" showButtonPanel="true" locale="pt_BR" readonlyInput="true">
+                            <f:convertDateTime pattern="dd/MM/yyyy" />
+                        </p:calendar>
+
+                        <p:commandButton value="Limpar" update="filtroDataFim" actionListener="#{eventoController.limparFiltroDataFim}" />
+
+                    </h:panelGroup>
+                </h:panelGrid>
+                <p:dataTable id="eventTable" value="#{eventoController.eventosFiltrados}" var="evento"
+                             emptyMessage="Nenhum evento encontrado.">
+                    <p:column headerText="Nome">
+                        <h:outputText value="#{evento.nome}" />
+                    </p:column>
+                    <p:column headerText="Data Início">
+                        <h:outputText value="#{evento.dataInicio}">
+                            <f:convertDateTime pattern="dd/MM/yyyy" />
+                        </h:outputText>
+                    </p:column>
+                    <p:column headerText="Data Fim">
+                        <h:outputText value="#{evento.dataFim}">
+                            <f:convertDateTime pattern="dd/MM/yyyy" />
+                        </h:outputText>
+                    </p:column>
+                    <p:column headerText="Ações">
+                        <p:commandButton value="Editar"
+                                         actionListener="#{eventoController.setEventoSelecionado(evento)}"
+                                         update=":eventosForm:growl :eventosForm:eventTable :editarEventoForm"
+                                         oncomplete="PF('editarEventoDialog').show();" process="@this" />
+                        <!-- Botão Excluir com confirmação -->
+                        <p:commandButton id="excluirEventoBtn" value="Excluir"
+                                         actionListener="#{eventoController.setEventoSelecionado(evento)}"
+                                         process="@this"
+                                         oncomplete="PF('confirmExclusaoEvento').show();"
+                                         style="margin-left: 12px;" />
+
+                    </p:column>
+                </p:dataTable>
+            </p:panel>
+        </h:form>
+
+        <p:confirmDialog id="confirmExclusaoEvento" message="Tem certeza que deseja excluir este evento?"
+                         header="Confirmação" icon="pi pi-exclamation-triangle"
+                         widgetVar="confirmExclusaoEvento">
+            <!-- Botão para confirmar exclusão -->
+            <p:commandButton value="Sim" action="#{eventoController.excluirEvento}"
+                             update=":eventosForm:growl :eventosForm:eventTable"
+                             oncomplete="PF('confirmExclusaoEvento').hide();" />
+
+            <!-- Botão para cancelar a exclusão -->
+            <p:commandButton value="Não" onclick="PF('confirmExclusaoEvento').hide();" type="button" />
+        </p:confirmDialog>
+
+        <!-- Diálogo para adicionar evento -->
+        <p:dialog header="Adicionar evento" widgetVar="addEventoDialog" modal="true" resizable="false" width="400">
+            <h:form id="addEventoForm">
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h:outputLabel value="Nome do evento" for="nomeEvento" style="width: 40%; text-align: right; margin-right: 10px;" />
+                    <p:inputText id="nomeEvento" value="#{eventoController.novoEvento.nome}" required="true"
+                                 style="width: 60%;" requiredMessage="O nome do evento é obrigatório.">
+                        <f:validateLength minimum="1" />
+                    </p:inputText>
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h:outputLabel value="Data de início" for="dataInicio" style="width: 40%; text-align: right; margin-right: 10px;" />
+                    <p:calendar id="dataInicio" value="#{eventoController.novoEvento.dataInicio}" pattern="dd/MM/yyyy"
+                                navigator="true" showButtonPanel="true" required="true"
+                                style="width: 60%;" requiredMessage="A data de início é obrigatória." readonlyInput="true"
+                                locale="pt_BR">
+                        <f:convertDateTime pattern="dd/MM/yyyy" />
+                    </p:calendar>
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h:outputLabel value="Data de fim" for="dataFim" style="width: 40%; text-align: right; margin-right: 10px;" />
+                    <p:calendar id="dataFim" value="#{eventoController.novoEvento.dataFim}" pattern="dd/MM/yyyy"
+                                navigator="true" showButtonPanel="true" required="true"
+                                style="width: 60%;" requiredMessage="A data de fim é obrigatória." readonlyInput="true"
+                                locale="pt_BR">
+                        <f:convertDateTime pattern="dd/MM/yyyy" />
+                    </p:calendar>
+                </div>
+                <p:commandButton value="Confirmar"
+                                 style="margin-top: 18px; display: block; margin-left: auto; margin-right: auto;"
+                                 action="#{eventoController.adicionarEvento}"
+                                 update=":eventosForm:growl :eventosForm:eventTable addEventoForm"
+                                 process="@form"
+                                 oncomplete="if (!args.validationFailed) { PF('addEventoDialog').hide(); }" />
+            </h:form>
+        </p:dialog>
+
+        <!-- Diálogo para editar evento -->
+        <p:dialog header="Editar Evento" widgetVar="editarEventoDialog" modal="true" resizable="false" width="800">
+            <h:form id="editarEventoForm">
+                <p:tabView >
+                    <p:tab title="Detalhes do Evento">
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <h:outputLabel value="Nome do evento" for="editarNomeEvento" style="width: 20%; text-align: right; margin-right: 10px;" />
+                            <p:inputText id="editarNomeEvento" value="#{eventoController.eventoSelecionado.nome}" required="true"
+                                         style="width: 30%;" requiredMessage="O nome do evento é obrigatório.">
+                                <f:validateLength minimum="1" />
+                            </p:inputText>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <h:outputLabel value="Data de início" for="editarDataInicio" style="width: 20%; text-align: right; margin-right: 10px;" />
+                            <p:calendar id="editarDataInicio" value="#{eventoController.eventoSelecionado.dataInicio}" pattern="dd/MM/yyyy"
+                                        navigator="true" showButtonPanel="true" required="true"
+                                        style="width: 75%;" requiredMessage="A data de início é obrigatória." readonlyInput="true"
+                                        locale="pt_BR">
+                                <f:convertDateTime pattern="dd/MM/yyyy" />
+                            </p:calendar>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <h:outputLabel value="Data de fim" for="editarDataFim" style="width: 20%; text-align: right; margin-right: 10px;" />
+                            <p:calendar id="editarDataFim" value="#{eventoController.eventoSelecionado.dataFim}" pattern="dd/MM/yyyy"
+                                        navigator="true" showButtonPanel="true" required="true"
+                                        style="width: 75%;" requiredMessage="A data de fim é obrigatória." readonlyInput="true"
+                                        locale="pt_BR">
+                                <f:convertDateTime pattern="dd/MM/yyyy" />
+                            </p:calendar>
+                        </div>
+                    </p:tab>
+                    <p:tab title="Gerenciar Participantes">
+                        <p:panelGrid columns="2" style="width:100%; margin-bottom: 10px;">
+                            <p:commandButton value="Adicionar Participante" icon="pi pi-plus"
+                                             onclick="PF('addParticipanteDialog').show();" style="margin-bottom: 10px;" />
+                        </p:panelGrid>
+                        <p:dataTable id="participanteTable" value="#{eventoController.eventoSelecionado.participantes}" var="participante"
+                                     emptyMessage="Nenhum participante encontrado." rows="10">
+                            <p:column headerText="Nome">
+                                <h:outputText value="#{participante.nome}" />
+                            </p:column>
+                            <p:column headerText="CPF">
+                                <h:outputText value="#{participante.cpf}" />
+                            </p:column>
+                            <p:column headerText="Email">
+                                <h:outputText value="#{participante.email}" />
+                            </p:column>
+                            <p:column headerText="Ações">
+                                <p:commandButton icon="pi pi-pencil" title="Editar"
+                                                 actionListener="#{eventoController.setParticipanteSelecionado(participante)}"
+                                                 style="margin: 5px;"
+                                                 update=":eventosForm:growl :editarEventoForm:participanteTable:editarParticipanteForm :editarParticipanteForm"
+                                                 onclick="PF('editarParticipanteDialog').show();" process="@this" />
+                                <p:commandButton icon="pi pi-trash" title="Excluir"
+                                                 actionListener="#{eventoController.setParticipanteSelecionado(participante)}"
+                                                 process="@this"
+                                                 oncomplete="PF('confirmExclusaoParticipante').show();"
+                                                 style="margin: 5px;"
+                                                 />
+                                <p:commandButton icon="pi pi-check" title="Confirmar Presença"
+                                                 actionListener="#{eventoController.setParticipanteSelecionado(participante)}"
+                                                 style="margin: 5px;"
+                                                 update=":eventosForm:growl :editarEventoForm:participanteTable confirmarPresencaForm"
+                                                 oncomplete="PF('confirmarPresencaDialog').show();" process="@this" />
+                            </p:column>
+                        </p:dataTable>
+
+                    </p:tab>
+                </p:tabView>
+                <p:commandButton value="Salvar Alterações"
+                                 style="margin-top: 20px; display: block; margin-left: auto; margin-right: auto;"
+                                 action="#{eventoController.atualizarEvento}"
+                                 update=":eventosForm:growl :eventosForm:eventTable editarEventoForm"
+                                 process="@form" oncomplete="if (!args.validationFailed) { PF('editarEventoDialog').hide(); }" />
+            </h:form>
+        </p:dialog>
+
+
+        <p:dialog header="Editar Participante" widgetVar="editarParticipanteDialog" modal="true" resizable="false" width="400">
+            <h:form id="editarParticipanteForm">
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h:outputLabel value="Nome do participante" for="editarNomeParticipante" style="width: 40%; text-align: right; margin-right: 10px;" />
+                    <p:inputText id="editarNomeParticipante" value="#{eventoController.participanteSelecionado.nome}" required="true"
+                                 style="width: 60%;" requiredMessage="O nome do participante é obrigatório.">
+                        <f:validateLength minimum="1" />
+                    </p:inputText>
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h:outputLabel value="CPF" for="editarCpfParticipante" style="width: 40%; text-align: right; margin-right: 10px;" />
+                    <p:inputText id="editarCpfParticipante" value="#{eventoController.participanteSelecionado.cpf}" required="true"
+                                 style="width: 60%;" requiredMessage="O CPF do participante é obrigatório.">
+                        <f:validateLength minimum="1" />
+                    </p:inputText>
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h:outputLabel value="Email" for="editarEmailParticipante" style="width: 40%; text-align: right; margin-right: 10px;" />
+                    <p:inputText id="editarEmailParticipante" value="#{eventoController.participanteSelecionado.email}" required="true"
+                                 style="width: 60%;" requiredMessage="O email do participante é obrigatório.">
+                        <f:validateLength minimum="1" />
+                    </p:inputText>
+                </div>
+                <p:commandButton value="Salvar"
+                                 style="margin-top: 18px; display: block; margin-left: auto; margin-right: auto;"
+                                 action="#{eventoController.atualizarParticipante}"
+                                 update=":eventosForm:growl :editarEventoForm:participanteTable :editarEventoForm"
+                                 process="@form"
+                                 oncomplete="if (!args.validationFailed) { PF('editarParticipanteDialog').hide(); PF('editarEventoDialog').show(); }"/>
+            </h:form>
+        </p:dialog>
+
+        <p:confirmDialog id="confirmExclusaoParticipante" message="Tem certeza que deseja excluir este participante?"
+                         header="Confirmação" icon="pi pi-exclamation-triangle"
+                         widgetVar="confirmExclusaoParticipante">
+            <!-- Botão para confirmar exclusão -->
+            <p:commandButton value="Sim" action="#{eventoController.excluirParticipante}"
+                             update=":eventosForm:growl :editarEventoForm:participanteTable :editarEventoForm"
+                             oncomplete="PF('confirmExclusaoParticipante').hide();" />
+
+            <!-- Botão para cancelar a exclusão -->
+            <p:commandButton value="Não" onclick="PF('confirmExclusaoParticipante').hide();" type="button" />
+        </p:confirmDialog>
+
+
+        <!-- Diálogo para adicionar participante -->
+        <p:dialog header="Adicionar Participante" widgetVar="addParticipanteDialog" modal="true" resizable="false" width="400">
+            <h:form id="addParticipanteForm">
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h:outputLabel value="Nome do participante" for="nomeParticipante" style="width: 40%; text-align: right; margin-right: 10px;" />
+                    <p:inputText id="nomeParticipante" value="#{eventoController.novoParticipante.nome}" required="true"
+                                 style="width: 60%;" requiredMessage="O nome do participante é obrigatório.">
+                        <f:validateLength minimum="1" />
+                    </p:inputText>
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h:outputLabel value="CPF" for="cpfParticipante" style="width: 40%; text-align: right; margin-right: 10px;" />
+                    <p:inputText id="cpfParticipante" value="#{eventoController.novoParticipante.cpf}" required="true"
+                                 style="width: 60%;" requiredMessage="O CPF do participante é obrigatório.">
+                        <f:validateLength minimum="1" />
+                    </p:inputText>
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h:outputLabel value="Email" for="emailParticipante" style="width: 40%; text-align: right; margin-right: 10px;" />
+                    <p:inputText id="emailParticipante" value="#{eventoController.novoParticipante.email}" required="true"
+                                 style="width: 60%;" requiredMessage="O email do participante é obrigatório.">
+                        <f:validateLength minimum="1" />
+                    </p:inputText>
+                </div>
+                <p:commandButton value="Adicionar Participante"
+                                 style="margin-top: 18px; display: block; margin-left: auto; margin-right: auto;"
+                                 action="#{eventoController.adicionarParticipante}"
+                                 update=":eventosForm:growl :editarEventoForm:participanteTable :editarEventoForm"
+                                 process="@form"
+                                 oncomplete="if (!args.validationFailed) { PF('addParticipanteDialog').hide(); PF('editarEventoDialog').show(); }" />
+            </h:form>
+        </p:dialog>
+
+        <!-- Diálogo para confirmar presença -->
+        <p:dialog header="Confirmar Presença" widgetVar="confirmarPresencaDialog" modal="true" resizable="false" width="400">
+            <h:form id="confirmarPresencaForm">
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h:outputLabel value="CPF" style="width: 40%; text-align: right; margin-right: 10px;" />
+                    <h:outputText value="#{eventoController.participanteSelecionado.cpf}" style="width: 60%;" />
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h:outputLabel value="Email" style="width: 40%; text-align: right; margin-right: 10px;" />
+                    <h:outputText value="#{eventoController.participanteSelecionado.email}" style="width: 60%;" />
+                </div>
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <h:outputLabel value="Data de presença" for="dataPresenca" style="width: 40%; text-align: right; margin-right: 10px;" />
+                    <p:calendar id="dataPresenca" value="#{eventoController.novaPresenca.data}" pattern="dd/MM/yyyy"
+                                navigator="true" showButtonPanel="true" required="true" style="width: 60%;"
+                                requiredMessage="A data de presença é obrigatória." locale="pt_BR" readonlyInput="true"
+                                validatorMessage="Por favor, insira uma data válida no formato dd/MM/yyyy.">
+                        <f:convertDateTime pattern="dd/MM/yyyy" />
+                    </p:calendar>
+
+
+                </div>
+                <p:commandButton value="Confirmar"
+                                 style="margin-top: 18px; display: block; margin-left: auto; margin-right: auto;"
+                                 action="#{eventoController.confirmarPresenca}"
+                                 update=":eventosForm:growl :editarEventoForm:participanteTable confirmarPresencaForm"
+                                 process="@form"
+                                 oncomplete="if (!args.validationFailed) { PF('confirmarPresencaDialog').hide(); }" />
+            </h:form>
+        </p:dialog>
+
+    </h:body>
+</f:view>
+</html>
